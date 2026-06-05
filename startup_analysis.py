@@ -140,3 +140,139 @@ print(cofounder_conflict_groups)
 
 runway_months_remaining_groups = df.groupby('Startup_Failure_Flag')['Runway_Months_Remaining'].mean()
 print(runway_months_remaining_groups)
+
+
+# Burnout Score across Burnout Levels
+# extracting the mean burnout score for Low and Severe groups from the groupby result
+low = burnout_groups['Low']
+severe = burnout_groups['Severe']
+
+# subtracting Low mean from Severe mean to get the exact point difference
+print(f"Severe burnout founders score {np.round(severe - low, 2)} points higher than Low burnout founders")
+
+# Failed vs Non-Failed
+# in Startup_Failure_Flag: 0 = survived, 1 = failed
+# groupby result is indexed by 0 and 1, so we access them directly
+
+# stress_groups[1] = mean stress of failed founders
+# stress_groups[0] = mean stress of survived founders
+# difference tells us how much more stressed failed founders were
+print(f"Failed founders have {np.round(stress_groups[1] - stress_groups[0], 2)} higher Stress Score")
+
+# same pattern — failed founders had higher decision fatigue
+print(f"Failed founders have {np.round(decision_fatigue_groups[1] - decision_fatigue_groups[0], 2)} higher Decision Fatigue")
+
+# PMF is reversed — higher is better, so survived (0) > failed (1)
+# we subtract failed from survived to show how much better survivors scored
+print(f"Failed startups have {np.round(product_market_fit_groups[0] - product_market_fit_groups[1], 2)} higher PMF Score when they survive")
+
+# same logic — revenue growth is better for survivors, so 0 - 1
+print(f"Failed startups grow {np.round(monthly_revenue_growth_groups[0] - monthly_revenue_growth_groups[1], 2)}% less in revenue")
+
+# failed founders faced more investor pressure
+print(f"Failed founders have {np.round(investor_pressure_groups[1] - investor_pressure_groups[0], 2)} higher Investor Pressure")
+
+# failed founders had more cofounder conflict
+print(f"Failed founders have {np.round(cofounder_conflict_groups[1] - cofounder_conflict_groups[0], 2)} higher Cofounder Conflict")
+
+# runway is better for survivors — they had more months remaining
+# so survived (0) - failed (1) shows the advantage survivors had
+print(f"Surviving startups had {np.round(runway_months_remaining_groups[0] - runway_months_remaining_groups[1], 2)} more months of runway than failed startups")
+
+#visualization
+
+#GRAPH 1 : HEATMAP
+# Correlation Heatmap - all numeric columns together
+numeric_cols = ['Burnout_Score', 'Stress_Score', 'Decision_Fatigue_Score','Investor_Pressure_Score','Cofounder_Conflict_Score','Runway_Months_Remaining','Monthly_Revenue_Growth_Percent','Product_Market_Fit_Score','Startup_Failure_Flag']
+corr_matrix = df[numeric_cols].corr()
+print(corr_matrix)
+
+sns.heatmap(corr_matrix, annot=True, cmap='coolwarm', linewidths=0.5)
+plt.title('Correlation Heatmap of Key Metrics')
+plt.tight_layout()
+plt.show()
+
+#Graph 2: HEATMAP
+#Investor pressure and cofounder conflict vs burnout levels
+
+conflict_pressure_burnout = pd.crosstab(
+    [df['Investor_Pressure_Score_Category'], df['Cofounder_Conflict_Score_Category']], 
+    df['Burnout_Level'], 
+    normalize='index'
+)*100 
+
+sns.heatmap(conflict_pressure_burnout, annot =True, cmap = 'YlGnBu', linewidths =0.5)
+plt.title('Investor Pressure and Co-Founder Conflict vs Burnout Levels')
+plt.tight_layout()
+plt.ylabel('Investor Pressure - Cofounder Conflict')
+
+plt.show()
+
+#GRAPH 3 : BOX PLOT 
+# distribution of Burnout score across low, moderate, severre burnout levels
+
+plt.figure(figsize=(8,6))
+sns.boxplot (x = 'Burnout_Level', y = 'Burnout_Score', data =df, hue ='Burnout_Level' , palette = 'coolwarm',order = ['Low', 'Moderate', 'Severe'], legend = False)
+plt.title('Burnout score distribution across Burnout Levels')
+plt.xlabel('Burnout Level')
+plt.ylabel('Burnout Score')
+plt.tight_layout()
+plt.show()
+
+# GRAPH 4: Box plot - Stress Score + Decision Fatigue vs Startup Failure
+fig, axes = plt.subplots(1, 2, figsize=(12, 6))
+
+sns.boxplot(x='Startup_Failure_Flag', y='Stress_Score', data=df, hue='Startup_Failure_Flag', palette='coolwarm', ax=axes[0], legend=False)
+axes[0].set_title('Stress Score: Failed vs Survived')
+axes[0].set_xlabel('Startup Failure (0=Survived, 1=Failed)')
+axes[0].set_ylabel('Stress Score')
+
+sns.boxplot(x='Startup_Failure_Flag', y='Decision_Fatigue_Score', data=df, hue='Startup_Failure_Flag', palette='coolwarm', ax=axes[1], legend=False)
+axes[1].set_title('Decision Fatigue: Failed vs Survived')
+axes[1].set_xlabel('Startup Failure (0=Survived, 1=Failed)')
+axes[1].set_ylabel('Decision Fatigue Score')
+
+plt.tight_layout()
+plt.show()
+
+# GRAPH 5: Scatter plot - PMF Score vs Monthly Revenue Growth colored by failure
+plt.figure(figsize=(10, 6))
+colors = {0: 'steelblue', 1: 'tomato'}
+for flag, group in df.groupby('Startup_Failure_Flag'):
+    plt.scatter(group['Product_Market_Fit_Score'],group['Monthly_Revenue_Growth_Percent'], c=colors[flag], label='Survived' if flag == 0 else 'Failed', alpha=0.3, s=10)
+plt.title('Product Market Fit vs Revenue Growth by Failure Status')
+plt.xlabel('Product Market Fit Score')
+plt.ylabel('Monthly Revenue Growth %')
+plt.legend()
+plt.tight_layout()
+plt.show()
+
+# GRAPH 6: Stacked bar - Economic Climate vs Failure Rate
+econ_failure = pd.crosstab(df['Economic_Climate'], df['Startup_Failure_Flag'], normalize='index') * 100
+econ_failure.columns = ['Survived', 'Failed']
+econ_failure.plot(kind='bar', stacked=True, figsize=(10, 6), color=['steelblue', 'tomato'])
+plt.title('Startup Failure Rate by Economic Climate')
+plt.xlabel('Economic Climate')
+plt.ylabel('Percentage %')
+plt.xticks(rotation=45)
+plt.legend(loc='upper right')
+plt.tight_layout()
+plt.show()
+
+# GRAPH 7: Bar chart - Mean differences summary
+metrics = ['Stress Score', 'Decision Fatigue', 'PMF Score', 'Revenue Growth %','Investor Pressure', 'Cofounder Conflict', 'Runway Months']
+failed_means = [stress_groups[1], decision_fatigue_groups[1], product_market_fit_groups[1],monthly_revenue_growth_groups[1], investor_pressure_groups[1], cofounder_conflict_groups[1], runway_months_remaining_groups[1]]
+survived_means = [stress_groups[0], decision_fatigue_groups[0], product_market_fit_groups[0], monthly_revenue_growth_groups[0], investor_pressure_groups[0], cofounder_conflict_groups[0], runway_months_remaining_groups[0]]
+
+x = np.arange(len(metrics))
+width = 0.35
+fig, ax = plt.subplots(figsize=(14, 7))
+ax.bar(x - width/2, survived_means, width, label='Survived', color='steelblue')
+ax.bar(x + width/2, failed_means, width, label='Failed', color='tomato')
+ax.set_title('Mean Metric Comparison: Failed vs Survived Startups')
+ax.set_xticks(x)
+ax.set_xticklabels(metrics, rotation=30, ha='right')
+ax.set_ylabel('Mean Value')
+ax.legend()
+plt.tight_layout()
+plt.show()
