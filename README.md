@@ -1,65 +1,73 @@
-# Startup Founder Burnout & Failure — EDA
 
-An exploratory data analysis project on a dataset of 50,000 startup founders, investigating what leads to founder burnout and ultimately startup failure.
+import pandas as pd
+from sklearn.model_selection import train_test_split
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.metrics import confusion_matrix
 
-## Dataset
-- Source: Startup Founder Burnout 2026 (Kaggle)
-- Size: 50,000 rows, 24 columns (after cleaning)
-- Target Variables: `Burnout_Level`, `Startup_Failure_Flag`
+# ─────────────────────────────────────────
+# Step 1: Load & Explore
+# ─────────────────────────────────────────
+df = pd.read_csv(r"D:\Data_analysis\titanic (1)\train.csv")
+print(df.shape)
+print(df.head())
+print(df.info())
 
-## Project Structure
-Startup-Burnout-EDA/
-│
-├── startup_analysis.py       # Main analysis script
-├── startup_founder_burnout_2026.csv  # Dataset
-└── README.md
+# ─────────────────────────────────────────
+# Step 2: Clean the Data
+# ─────────────────────────────────────────
+df['Age'] = df['Age'].fillna(df['Age'].median())
+df.drop(columns=['Cabin'], inplace=True)
+df['Embarked'] = df['Embarked'].fillna(df['Embarked'].mode()[0])
+print(df.isnull().sum())
 
+# ─────────────────────────────────────────
+# Step 3: Prepare Features
+# ─────────────────────────────────────────
+df['Sex'] = df['Sex'].map({'male': 1, 'female': 0})
+df['Embarked'] = df['Embarked'].map({'S': 0, 'C': 1, 'Q': 2})
 
-## Key Questions Answered
+features = ['Pclass', 'Sex', 'Age', 'SibSp', 'Parch', 'Fare', 'Embarked']
+X = df[features]
+y = df['Survived']
 
-### Section 1 — What leads to founder burnout?
-1. Does the founder's sleep schedule affect their burnout level?
-2. Does the founder's weekly work hours affect their burnout level?
-3. Does founder type affect their burnout level?
-4. Does founder age and experience level affect their burnout level?
-5. Do investor pressure and cofounder conflict drive founder burnout?
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+print(X_train.shape, X_test.shape)
 
-### Section 2 — What leads to startup failure?
-1. Do burned out founders fail more?
-2. Does critical runway lead to higher failure rate?
-3. Does funding stage affect failure rate?
-4. Does industry type affect failure rate?
-5. Does economic climate affect failure rate?
-6. Do high stress and decision fatigue scores correlate with failure?
-7. Does team size affect failure rate?
+# ─────────────────────────────────────────
+# Step 4: Train the Model
+# ─────────────────────────────────────────
+model = DecisionTreeClassifier(random_state=42, max_depth=5)
+model.fit(X_train, y_train)
+print("Model Trained!")
 
-## Key Findings
+# ─────────────────────────────────────────
+# Step 5: Evaluate the Model
+# ─────────────────────────────────────────
+accuracy = model.score(X_test, y_test)
+print(f"Accuracy: {accuracy:.2f}")
 
-### Burnout
-- Severe burnout founders score **5.98 points higher** on burnout score than low burnout founders
-- Founders with poor sleep have a **26.4% severe burnout rate** vs only **0.6%** for good sleepers
-- Extreme work hours (60-100hrs/week) lead to **16% severe burnout** vs **0.3%** for normal hours
-- When both investor pressure and cofounder conflict are high, **44.7% of founders reach severe burnout**
+cm = confusion_matrix(y_test, model.predict(X_test))
+print(cm)
 
-### Startup Failure
-- Severely burned out founders have a **69% failure rate** vs only **7.9%** for low burnout founders
-- Failed founders had **2.5 points higher stress** and **2.67 points higher decision fatigue**
-- Surviving startups had **2.19 higher PMF score** — they built what the market wanted
-- Surviving startups grew at **3.41% higher monthly revenue**
-- Surviving startups had **5.7 more months of runway** on average
-- Startups in a **Recession had a 45.7% failure rate** vs only 13.9% in a Bull Market
-- Industry type showed **no significant impact** on failure rate
+# ─────────────────────────────────────────
+# Step 6: Predict on Test Data & Save
+# ─────────────────────────────────────────
+test_df = pd.read_csv(r"D:\Data_analysis\titanic (1)\test.csv")
 
+test_df['Age'] = test_df['Age'].fillna(test_df['Age'].median())
+test_df.drop(columns=['Cabin'], inplace=True)
+test_df['Embarked'] = test_df['Embarked'].fillna(test_df['Embarked'].mode()[0])
+test_df['Fare'] = test_df['Fare'].fillna(test_df['Fare'].median())
 
-## Technologies Used
-- Python 3
-- pandas
-- numpy
-- matplotlib
-- seaborn
+test_df['Sex'] = test_df['Sex'].map({'male': 1, 'female': 0})
+test_df['Embarked'] = test_df['Embarked'].map({'S': 0, 'C': 1, 'Q': 2})
 
+X_test_final = test_df[features]
+predictions = model.predict(X_test_final)
 
-## How to Run
-1. Clone the repo
-2. Install dependencies: `pip install pandas numpy matplotlib seaborn`
-3. Run: `python startup_analysis.py`
+submission = pd.DataFrame({
+    'PassengerId': test_df['PassengerId'],
+    'Survived': predictions
+})
+submission.to_csv(r"D:\Data_analysis\submission.csv", index=False)
+print("Submission saved!")
