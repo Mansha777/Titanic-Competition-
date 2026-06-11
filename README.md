@@ -1,5 +1,5 @@
 # Titanic Survival Prediction — ML Model
-# =========================================
+
 # A beginner machine learning project that predicts whether a
 # Titanic passenger survived, using a Decision Tree Classifier.
 #
@@ -52,11 +52,11 @@
 #
 #
 # HOW TO RUN
-# ----------
+
 # pip install pandas scikit-learn
 # python titanic_model.py
 #
 #
 # TECH STACK
-# ----------
+
 # Python, Pandas, scikit-learn
