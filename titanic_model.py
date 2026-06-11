@@ -1,7 +1,6 @@
 #Step:1 Load and Explore the Data
 import pandas as pd 
 df = pd.read_csv(r"D:\Data_analysis\titanic (1)\train.csv")
-print(df.shape)
 print(df.head())
 print(df.info())
 
