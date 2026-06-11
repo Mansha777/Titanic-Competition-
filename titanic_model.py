@@ -1,6 +1,7 @@
 #Step:1 Load and Explore the Data
 import pandas as pd 
 df = pd.read_csv(r"D:\Data_analysis\titanic (1)\train.csv")
+print(df.shape)
 print(df.head())
 print(df.info())
 
@@ -86,3 +87,53 @@ submission = pd.DataFrame({
 
 submission.to_csv(r"D:\Data_analysis\submission.csv", index=False)
 print("Submission saved!")
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#Using random forest 
+
+import pandas as pd 
+from sklearn.ensemble import RandomForestClassifier 
+from sklearn.model_selection import train_test_split 
+from sklearn.metrics import accuracy_score 
+
+df = pd.read_csv(r"D:\Data_analysis\titanic (1)\train.csv")
+print(df.head())
+
+#clean the data
+df['Age'] = df.Age.fillna(df.Age.median() )
+df.drop (columns = ['Cabin'], inplace = True)
+df['Embarked'] = df.Embarked.fillna(df.Embarked.mode()[0])
+print(df.isnull().sum())
+
+#preparing features and target variable
+
+df['Embarked'] = df.Embarked.map({'S': 0,'C': 1, "Q": 2})
+df['Sex'] = df.Sex.map({'Male': 1, 'Female' : 0})
+
+features = ['Pclass', 'Sex', 'Age', 'SibSp','Parch', 'Fare', 'Embarked']
+X =df[features]
+y=df['Survived']
+
+#split into train and test 
+X_train , X_test, y_train , y_test = train_test_split(X,y,test_size=0.2, random_state = 42)
+print(X_train.shape, X_test.shape)
+
+#train the model 
+rf_model = RandomForestClassifier(n_estimators=100, random_state = 42)
+rf_model.fit(X_train ,y_train)
+
+predictions = rf_model.predict(X_test)
+print (accuracy_score(y_test, predictions))
